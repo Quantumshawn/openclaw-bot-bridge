@@ -1,0 +1,12 @@
+{
+  "name": "clawdbot-server",
+  "version": "1.0.0",
+  "description": "OpenClaw multi-bot relay server and dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

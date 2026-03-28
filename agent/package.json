@@ -1,0 +1,13 @@
+{
+  "name": "clawdbot-agent",
+  "version": "1.0.0",
+  "description": "OpenClaw bridge agent - runs on each bot machine",
+  "main": "bridge.js",
+  "scripts": {
+    "start": "node bridge.js"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "ws": "^8.18.0"
+  }
+}

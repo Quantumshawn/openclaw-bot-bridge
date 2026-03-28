@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenClaw Network</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --text:     #c9d1d9;
+      --muted:    #8b949e;
+      --green:    #3fb950;
+      --red:      #f85149;
+      --blue:     #58a6ff;
+      --orange:   #d29922;
+      --accent:   #1f6feb;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ---- Header ---- */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    header h1 { font-size: 1.05rem; font-weight: 600; color: var(--blue); }
+
+    #conn-status {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+    .dot.online { background: var(--green); }
+
+    /* ---- Layout ---- */
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      height: calc(100vh - 53px);
+    }
+
+    /* ---- Sidebar ---- */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 14px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .bot-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      transition: border-color 0.2s;
+    }
+    .bot-card.online { border-color: var(--green); }
+    .bot-card.offline { opacity: 0.55; }
+
+    .bot-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bot-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+    .bot-dot.online { background: var(--green); }
+    .bot-name { font-weight: 600; font-size: 0.9rem; }
+    .bot-meta { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+    /* ---- Main ---- */
+    .main { display: flex; flex-direction: column; overflow: hidden; }
+
+    .feed-toolbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .feed-toolbar span { font-size: 0.8rem; color: var(--muted); }
+
+    #clear-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 3px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    #clear-btn:hover { color: var(--text); border-color: var(--muted); }
+
+    #feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .empty-label {
+      color: var(--muted);
+      font-size: 0.88rem;
+      text-align: center;
+      margin: auto;
+    }
+
+    /* ---- Messages ---- */
+    .msg {
+      display: flex;
+      gap: 10px;
+      animation: fadein 0.18s ease;
+    }
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(3px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+      color: #fff;
+    }
+    /* rotating colors per bot */
+    .c0 { background: #1f6feb; }
+    .c1 { background: #388bfd; }
+    .c2 { background: #3fb950; }
+    .c3 { background: #d29922; }
+    .c4 { background: #f85149; }
+    .c5 { background: #a371f7; }
+
+    .msg-body { flex: 1; min-width: 0; }
+    .msg-meta { font-size: 0.73rem; color: var(--muted); margin-bottom: 3px; }
+    .msg-meta strong { color: var(--text); margin-right: 4px; }
+    .msg-to { color: var(--orange); margin-right: 4px; }
+    .msg-content {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg-file { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+
+    .sys-msg {
+      font-size: 0.75rem;
+      text-align: center;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ---- Compose ---- */
+    .compose {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 10px 14px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    .compose-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .compose-row { display: flex; align-items: center; gap: 6px; }
+    .compose-lbl { font-size: 0.72rem; color: var(--muted); width: 24px; flex-shrink: 0; }
+
+    select, input, textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: 0.83rem;
+      font-family: inherit;
+      outline: none;
+    }
+    select:focus, input:focus, textarea:focus { border-color: var(--accent); }
+
+    #compose-msg {
+      flex: 1;
+      resize: none;
+      height: 56px;
+    }
+
+    #send-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 0 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      height: 56px;
+      flex-shrink: 0;
+    }
+    #send-btn:hover:not(:disabled) { background: #388bfd; }
+    #send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>&#x1F43E; OpenClaw Network</h1>
+  <div id="conn-status">
+    <div class="dot" id="conn-dot"></div>
+    <span id="conn-text">Connecting...</span>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div>
+      <div class="section-label">Bots</div>
+      <div id="bot-list"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="feed-toolbar">
+      <span>Live Message Feed</span>
+      <button id="clear-btn">Clear</button>
+    </div>
+
+    <div id="feed">
+      <div class="empty-label" id="empty-label">No messages yet.</div>
+    </div>
+
+    <div class="compose">
+      <div class="compose-fields">
+        <div class="compose-row">
+          <span class="compose-lbl">To</span>
+          <select id="compose-to">
+            <option value="all">all bots</option>
+          </select>
+        </div>
+        <textarea id="compose-msg" placeholder="Type a message... (Ctrl+Enter to send)"></textarea>
+      </div>
+      <button id="send-btn" disabled>Send</button>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Token from URL: http://server:3000/?token=yourtoken
+  const TOKEN = new URLSearchParams(window.location.search).get('token') || '';
+
+  // ---- Color assignment per bot ----
+  const botColorMap = {};
+  let colorIdx = 0;
+  function botColor(name) {
+    if (!botColorMap[name]) botColorMap[name] = 'c' + (colorIdx++ % 6);
+    return botColorMap[name];
+  }
+  function initials(name) {
+    return String(name).slice(0, 2).toUpperCase();
+  }
+
+  // ---- State ----
+  const knownBots = new Map(); // name -> {connectedAt, online}
+
+  // ---- WebSocket ----
+  const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+  let ws, reconnectDelay = 2000;
+
+  function connect() {
+    ws = new WebSocket(proto + location.host);
+
+    ws.addEventListener('open', () => {
+      reconnectDelay = 2000;
+      ws.send(JSON.stringify({ type: 'register', name: 'dashboard', token: TOKEN }));
+      setConnStatus(true);
+      document.getElementById('send-btn').disabled = false;
+    });
+
+    ws.addEventListener('message', (evt) => {
+      let msg;
+      try { msg = JSON.parse(evt.data); } catch { return; }
+      handle(msg);
+    });
+
+    ws.addEventListener('close', () => {
+      setConnStatus(false);
+      document.getElementById('send-btn').disabled = true;
+      setTimeout(connect, reconnectDelay);
+      reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+    });
+  }
+
+  function setConnStatus(online) {
+    document.getElementById('conn-dot').className = 'dot' + (online ? ' online' : '');
+    document.getElementById('conn-text').textContent = online ? 'Connected' : 'Reconnecting...';
+  }
+
+  // ---- Message handling ----
+  function handle(msg) {
+    if (msg.type === 'status') {
+      applyStatus(msg.bots || []);
+    } else if (msg.type === 'history') {
+      (msg.messages || []).forEach(m => appendMsg(m));
+    } else if (msg.type === 'message') {
+      appendMsg(msg);
+    }
+  }
+
+  function applyStatus(bots) {
+    const onlineNow = new Set(bots.map(b => b.name));
+    // Merge into knownBots
+    bots.forEach(b => knownBots.set(b.name, { connectedAt: b.connectedAt, online: true }));
+    for (const [name, info] of knownBots) {
+      info.online = onlineNow.has(name);
+    }
+    renderBotList();
+  }
+
+  function renderBotList() {
+    const container = document.getElementById('bot-list');
+    const toSel     = document.getElementById('compose-to');
+    const prevTo    = toSel.value;
+
+    container.innerHTML = '';
+
+    for (const [name, info] of knownBots) {
+      const card = document.createElement('div');
+      card.className = 'bot-card ' + (info.online ? 'online' : 'offline');
+      const time = info.connectedAt
+        ? 'Since ' + new Date(info.connectedAt).toLocaleTimeString()
+        : '';
+      card.innerHTML =
+        '<div class="bot-row">' +
+          '<div class="bot-dot ' + (info.online ? 'online' : '') + '"></div>' +
+          '<span class="bot-name">' + esc(name) + '</span>' +
+        '</div>' +
+        '<div class="bot-meta">' + (info.online ? 'Online' : 'Offline') +
+          (time ? ' &bull; ' + esc(time) : '') + '</div>';
+      container.appendChild(card);
+    }
+
+    // Rebuild compose-to select
+    toSel.innerHTML = '<option value="all">all bots</option>';
+    for (const name of knownBots.keys()) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      toSel.appendChild(opt);
+    }
+    toSel.value = prevTo || 'all';
+  }
+
+  function appendMsg(msg) {
+    const feed  = document.getElementById('feed');
+    const empty = document.getElementById('empty-label');
+    if (empty) empty.remove();
+
+    const el = document.createElement('div');
+    el.className = 'msg';
+
+    const color  = botColor(msg.from || '?');
+    const inits  = initials(msg.from || '?');
+    const time   = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+    const toTxt  = (msg.to && msg.to !== 'all')
+      ? '&#8594; <span class="msg-to">' + esc(msg.to) + '</span>'
+      : '&#8594; <span class="msg-to">all</span>';
+
+    let contentStr;
+    if (typeof msg.content === 'string') {
+      contentStr = msg.content;
+    } else {
+      contentStr = JSON.stringify(msg.content, null, 2);
+    }
+
+    el.innerHTML =
+      '<div class="msg-avatar ' + color + '">' + esc(inits) + '</div>' +
+      '<div class="msg-body">' +
+        '<div class="msg-meta"><strong>' + esc(msg.from || 'unknown') + '</strong>' +
+          toTxt + ' <span>' + esc(time) + '</span></div>' +
+        '<div class="msg-content">' + esc(contentStr) + '</div>' +
+        (msg.filename ? '<div class="msg-file">&#128196; ' + esc(msg.filename) + '</div>' : '') +
+      '</div>';
+
+    feed.appendChild(el);
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  // ---- Compose ----
+  document.getElementById('send-btn').addEventListener('click', sendMsg);
+  document.getElementById('compose-msg').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendMsg();
+  });
+
+  function sendMsg() {
+    const content = document.getElementById('compose-msg').value.trim();
+    const to      = document.getElementById('compose-to').value;
+    if (!content || !ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: 'message', content, to }));
+    document.getElementById('compose-msg').value = '';
+  }
+
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    document.getElementById('feed').innerHTML =
+      '<div class="empty-label" id="empty-label">No messages yet.</div>';
+  });
+
+  // ---- Escape HTML ----
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  connect();
+</script>
+</body>
+</html>
