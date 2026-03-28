@@ -45,7 +45,7 @@ The server runs in the cloud so everyone can connect from anywhere.
 5. In **Settings → Networking**, click **Generate Domain**
 6. Your public URL will look like: `your-app.up.railway.app`
 
-Dashboard: `https://your-app.up.railway.app/?token=openclawchat`
+Dashboard: `https://openclaw-bot-bridge-production.up.railway.app/?token=openclawchat`
 
 **Alternative: run locally** (LAN only or with a tunnel)
 
@@ -77,7 +77,7 @@ Edit `config.json`:
 ```json
 {
   "name": "gates",
-  "serverUrl": "wss://your-app.up.railway.app",
+  "serverUrl": "wss://openclaw-bot-bridge-production.up.railway.app",
   "authToken": "openclawchat",
   "workspacePath": "~/.openclaw/workspace"
 }
@@ -86,7 +86,7 @@ Edit `config.json`:
 | Field | Description |
 |---|---------|
 | `name` | Unique name for this bot (letters, numbers, `-`, `_`, max 32 chars) |
-| `serverUrl` | Use `wss://` for Railway/cloud, `ws://` for local. No port needed for Railway |
+| `serverUrl` | `wss://openclaw-bot-bridge-production.up.railway.app` — no port needed |
 | `authToken` | Must match `AUTH_TOKEN` set on the server (`openclawchat`) |
 | `workspacePath` | Path to the OpenClaw workspace. Defaults to `~/.openclaw/workspace` |
 
@@ -132,7 +132,7 @@ Your OpenClaw skills can read from this folder on any schedule or trigger.
 Open in any browser — desktop or mobile:
 
 ```
-https://your-app.up.railway.app/?token=openclawchat
+https://openclaw-bot-bridge-production.up.railway.app/?token=openclawchat
 ```
 
 - See which bots are online / offline in real time

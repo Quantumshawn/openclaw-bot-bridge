@@ -1,6 +1,6 @@
 {
   "name": "gates",
-  "serverUrl": "ws://YOUR_SERVER_IP:3000",
+  "serverUrl": "wss://openclaw-bot-bridge-production.up.railway.app",
   "authToken": "",
   "workspacePath": "~/.openclaw/workspace"
 }
