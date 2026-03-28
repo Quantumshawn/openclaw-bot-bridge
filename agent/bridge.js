@@ -81,7 +81,8 @@ function flushPendingQueue() {
 
 function connect() {
   console.log(`Connecting to relay server...`);
-  ws = new WebSocket(serverUrl);
+  // rejectUnauthorized: false handles self-signed or tunnel TLS certs (e.g. localhost.run)
+  ws = new WebSocket(serverUrl, { rejectUnauthorized: false });
 
   ws.on('open', () => {
     reconnectDelay = 2000;
