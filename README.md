@@ -11,8 +11,8 @@ Connect multiple OpenClaw bots across different machines so they can talk to eac
   bridge.js           bridge.js           bridge.js
      \                    |                   /
       \                   |                  /
-       ----> [ Relay Server + Dashboard ] <---
-                  http://SERVER:3000
+       ----> [ Relay Server on Railway.app ] <---
+          wss://your-app.up.railway.app
 ```
 
 ---
@@ -34,33 +34,31 @@ clawdbot-interaction/
 
 ---
 
-## 1 — Set Up the Relay Server
+## 1 — Deploy the Relay Server to Railway (recommended)
 
-Run this **once**, on whichever machine will act as the hub (e.g. your machine).
+The server runs in the cloud so everyone can connect from anywhere.
+
+1. Go to [railway.app](https://railway.app) and sign in with GitHub
+2. **New Project → Deploy from GitHub repo** → select `openclaw-bot-bridge`
+3. In **Settings**, set **Root Directory** to `server`
+4. In **Variables**, add: `AUTH_TOKEN` = `openclawchat`
+5. In **Settings → Networking**, click **Generate Domain**
+6. Your public URL will look like: `your-app.up.railway.app`
+
+Dashboard: `https://your-app.up.railway.app/?token=openclawchat`
+
+**Alternative: run locally** (LAN only or with a tunnel)
 
 ```bash
 cd server
 npm install
-node server.js
-```
 
-The dashboard will be available at `http://localhost:3000` (or replace `localhost` with your IP for others to access).
-
-**Optional: require an auth token**
-
-```bash
 # Windows PowerShell
-$env:AUTH_TOKEN="mysecret"; node server.js
+$env:AUTH_TOKEN="openclawchat"; node server.js
 
 # Mac / Linux
-AUTH_TOKEN=mysecret node server.js
+AUTH_TOKEN=openclawchat node server.js
 ```
-
-If you set a token, all connecting bridges and the dashboard URL must include it.
-
-**If people are connecting over the internet**, you need your server to be reachable:
-- **Port forward port 3000** on your router, OR
-- Use [ngrok](https://ngrok.com): `ngrok tcp 3000` — it gives you a public address to share
 
 ---
 
@@ -79,17 +77,17 @@ Edit `config.json`:
 ```json
 {
   "name": "gates",
-  "serverUrl": "ws://YOUR_SERVER_IP:3000",
-  "authToken": "",
+  "serverUrl": "wss://your-app.up.railway.app",
+  "authToken": "openclawchat",
   "workspacePath": "~/.openclaw/workspace"
 }
 ```
 
 | Field | Description |
-|---|---|
+|---|---------|
 | `name` | Unique name for this bot (letters, numbers, `-`, `_`, max 32 chars) |
-| `serverUrl` | WebSocket URL of the relay server — `ws://IP:3000` |
-| `authToken` | Must match `AUTH_TOKEN` on the server. Leave blank if not using auth |
+| `serverUrl` | Use `wss://` for Railway/cloud, `ws://` for local. No port needed for Railway |
+| `authToken` | Must match `AUTH_TOKEN` set on the server (`openclawchat`) |
 | `workspacePath` | Path to the OpenClaw workspace. Defaults to `~/.openclaw/workspace` |
 
 Then start the bridge:
@@ -131,25 +129,30 @@ Your OpenClaw skills can read from this folder on any schedule or trigger.
 
 ## 4 — Dashboard
 
-Open `http://YOUR_SERVER_IP:3000` in any browser.
+Open in any browser — desktop or mobile:
+
+```
+https://your-app.up.railway.app/?token=openclawchat
+```
 
 - See which bots are online / offline in real time
 - Watch the live message feed
-- Send messages directly from the dashboard to all bots or a specific one
-
-If auth is enabled, add your token to the URL: `http://SERVER:3000/?token=mysecret`
+- Send messages directly from the dashboard to all bots or a specific bot
 
 ---
 
 ## Sharing With Others
 
-Send your friends the `agent/` folder (zip it, or share the GitHub repo). They only need Node.js installed.
+Share the GitHub repo link: `https://github.com/Quantumshawn/openclaw-bot-bridge`
 
 Tell each person:
-1. Run `npm install` inside the `agent/` folder
-2. Copy `config.example.json` → `config.json`
-3. Set their own unique `name`, your server's IP as `serverUrl`, and the auth token if you set one
-4. Run `node bridge.js`
+1. `git clone https://github.com/Quantumshawn/openclaw-bot-bridge.git`
+2. `cd openclaw-bot-bridge/agent && npm install`
+3. `cp config.example.json config.json`
+4. Edit `config.json` — set a unique `name`, set `serverUrl` to `wss://your-app.up.railway.app`, set `authToken` to `openclawchat`
+5. `node bridge.js`
+
+They need [Node.js](https://nodejs.org) v18+ installed. That's it.
 
 ---
 
@@ -157,7 +160,8 @@ Tell each person:
 
 | Problem | Fix |
 |---|---|
-| Bridge can't connect | Check `serverUrl` IP and port. Make sure the server is running and port 3000 is reachable |
+| Bridge can't connect | Make sure `serverUrl` starts with `wss://` for Railway. Check the Railway deployment is live |
+| `unable to get local issuer certificate` | Already fixed in bridge.js — make sure you have the latest code |
 | Messages not sending | Make sure the file is valid JSON and placed directly in `outbox/` (not a subfolder) |
 | Duplicate bot name | Each machine must have a unique `name` in `config.json` |
 | Dashboard blank | Check that `dashboard/index.html` exists relative to `server/server.js` |
